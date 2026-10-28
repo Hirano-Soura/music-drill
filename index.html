@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>音楽</title>
+<meta name="theme-color" content="#0f1419">
+<style>
+  :root{
+    --bg:#0f1419; --bg2:#172029; --bg3:#212d38; --line:#33414e;
+    --fg:#e9eef2; --fg2:#a9b6c1; --fg3:#74828e;
+    --ac:#9b7fe0; --acbg:rgba(155,127,224,.16); --acfg:#c6b3ff;
+    --ok:#4cc38a; --ng:#e5604f; --star:#e8b931; --onac:#14101f;
+    --paper:#f6f3ea; --ink:#1b1b1b; --cur:#7c4dff;
+    color-scheme:dark;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    background:var(--bg);color:var(--fg);
+    font-family:"Hiragino Sans","Yu Gothic UI","Noto Sans JP",system-ui,sans-serif;
+    font-size:15px;line-height:1.7;
+    padding:14px 16px calc(60px + env(safe-area-inset-bottom));
+    -webkit-text-size-adjust:100%;
+  }
+  .wrap{max-width:680px;margin:0 auto}
+  h1{font-size:19px;margin:4px 0 2px;color:var(--acfg)}
+  .sub{color:var(--fg3);font-size:12px;margin:0 0 14px}
+  h2{font-size:14px;margin:0 0 8px;color:var(--acfg);letter-spacing:.04em}
+  .card{background:var(--bg2);border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:12px}
+  .hidden{display:none !important}
+  button{font-family:inherit;font-size:15px;cursor:pointer;color:var(--fg)}
+  .btn{background:var(--bg3);border:1px solid var(--line);border-radius:8px;padding:10px 16px;min-height:44px}
+  .btn.primary{background:var(--ac);border-color:var(--ac);color:var(--onac);font-weight:600}
+  .btn.sm{min-height:34px;padding:5px 10px;font-size:13px}
+  .btn.block{width:100%}
+  .row{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:10px}
+  .lbl{font-size:12px;color:var(--fg3);min-width:52px}
+  .chip{background:var(--bg3);border:1px solid var(--line);color:var(--fg2);border-radius:999px;padding:6px 13px;font-size:13px;min-height:34px}
+  .chip.on{background:var(--acbg);border-color:var(--ac);color:var(--acfg)}
+  .deck{display:block;width:100%;text-align:left;background:var(--bg2);border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin-bottom:8px}
+  .deck b{display:block;font-size:15px}
+  .deck span{display:block;font-size:12px;color:var(--fg3)}
+  .back{background:none;border:none;color:var(--fg3);padding:6px 0;font-size:13px;margin-bottom:6px}
+  .lead{font-size:13px;color:var(--fg2);margin:0 0 10px}
+  .more{margin:6px 0 0;padding-left:20px}
+  .more li{font-size:14px;color:var(--fg2);margin:3px 0}
+  .tag{display:inline-block;font-size:11px;padding:1px 8px;border-radius:999px;margin-left:6px;border:1px solid var(--line);color:var(--fg3);vertical-align:middle}
+  .tag.o{border-color:var(--ok);color:var(--ok)}
+  .meta{display:flex;justify-content:space-between;font-size:12px;color:var(--fg3);margin-bottom:6px}
+  .prog{height:5px;background:var(--bg3);border-radius:3px;overflow:hidden;margin-bottom:10px}
+  .prog>i{display:block;height:100%;background:var(--ac);width:0}
+  .muted{color:var(--fg3);font-size:12px}
+  .fieldhead{font-size:13px;color:var(--fg2);margin:0 0 10px}
+  /* 五線は紙の色の上に描く（音符と記号が背景に溶けないように） */
+  .staff{background:var(--paper);border-radius:8px;padding:6px 4px;margin:4px 0 10px;text-align:center}
+  .staff svg{display:block;margin:0 auto;max-width:100%;height:auto}
+  .ask{font-size:20px;font-weight:700;text-align:center;margin:4px 0 12px}
+  .choices{display:grid;grid-template-columns:repeat(auto-fill,minmax(64px,1fr));gap:6px}
+  .choices.wide{grid-template-columns:repeat(auto-fill,minmax(150px,1fr))}
+  .choice{background:var(--bg3);border:1px solid var(--line);border-radius:8px;min-height:48px;padding:6px 4px;font-size:16px}
+  .choice.ok{border-color:var(--ok);background:rgba(76,195,138,.18);color:var(--ok)}
+  .choice.ng{border-color:var(--ng);background:rgba(229,96,79,.18);color:var(--ng)}
+  .fb{min-height:24px;font-size:14px;margin:10px 0 0;text-align:center}
+  .fb.ok{color:var(--ok)} .fb.ng{color:var(--ng)}
+  table.st{width:100%;border-collapse:collapse;font-size:13px}
+  table.st td{border-top:1px solid var(--line);padding:4px 6px}
+  table.st td.n{text-align:right;color:var(--fg2)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- ホーム -->
+  <section id="home">
+    <h1 id="title"></h1>
+    <p class="sub">記録はこの端末のブラウザに保存</p>
+
+    <div class="card">
+      <p class="lead" id="lead"></p>
+      <ul class="more" id="how"></ul>
+    </div>
+
+    <div class="card">
+      <h2>音名の表記</h2>
+      <div class="row" id="sysChips" style="margin:0"></div>
+    </div>
+
+    <div id="groups"></div>
+
+    <div class="row" style="justify-content:flex-end">
+      <button class="btn sm" id="resetBtn">記録を消す</button>
+    </div>
+  </section>
+
+  <!-- 出題 -->
+  <section id="drill" class="hidden">
+    <button class="back" data-go="home">← やめる</button>
+    <div class="meta"><span id="dMeta"></span><span id="dScore"></span></div>
+    <div class="prog"><i id="dProg"></i></div>
+    <div class="card">
+      <div class="muted" id="dRange"></div>
+      <div class="staff" id="dStaff"></div>
+      <div class="ask" id="dAsk"></div>
+      <div class="choices" id="dChoices"></div>
+      <p class="fb" id="dFb"></p>
+      <button class="btn primary block hidden" id="nextBtn">次へ</button>
+    </div>
+  </section>
+
+  <!-- 結果 -->
+  <section id="result" class="hidden">
+    <h1>おつかれさま</h1>
+    <div class="card">
+      <p id="resText"></p>
+      <p class="muted" id="resGoal"></p>
+      <table class="st" id="resWeak"></table>
+    </div>
+    <div class="row">
+      <button class="btn" data-go="home">ホームへ</button>
+      <button class="btn primary" id="againBtn">もう一度</button>
+    </div>
+  </section>
+
+</div>
+
+<script>
+// データファイルは window.__addMusic({...}) を呼ぶ。kind で受け取り方を分ける（LC-2）
+//   portal … 表題・使い方・目標の値（goal）と 1 回の問題数 / group … 出題範囲のまとまりと、範囲の宣言（ranges）
+var PORTAL = null, GROUPS = [];
+window.__addMusic = function(o){
+  if (o.kind === "portal") PORTAL = o;
+  else if (o.kind === "group") GROUPS.push(o);
+};
+</script>
+<script src="理論.js"></script>
+<script src="出題.js"></script>
+<script src="データ/portal.js"></script>
+<script src="データ/group_note.js"></script>
+<script src="データ/group_keysig.js"></script>
+<script src="データ/group_interval.js"></script>
+<script src="データ/group_melody.js"></script>
+<script src="データ/group_chord.js"></script>
+<script>
+(function(){
+  var T = window.MusicTheory, D = window.MusicDrill;
+  var KEY = "music-v1";
+  GROUPS.sort(function(a,b){ return a.order - b.order; });
+  var RANGES = [], BY_RANGE = {};
+  GROUPS.forEach(function(g){ g.ranges.forEach(function(r){ r.group = g; RANGES.push(r); BY_RANGE[r.id] = r; }); });
+
+  // ---- 保存（file:// やプライベートモードで失敗しても動くように） ----
+  //   log … 範囲ごとの回答の並び {t: target, ok: 1/0, ms}。苦手は target（種類×対象）ごとに数える
+  var LOG_MAX = 400;
+  var state = { sys: T.SYSTEMS[0].id, log: {} };
+  try {
+    var raw = localStorage.getItem(KEY);
+    if (raw){ var s = JSON.parse(raw); for (var k in s) state[k] = s[k]; }
+  } catch(e) {}
+  function save(){ try { localStorage.setItem(KEY, JSON.stringify(state)); } catch(e) {} }
+  function logOf(id){ return state.log[id] || (state.log[id] = []); }
+  function byTarget(id){
+    var o = {};
+    logOf(id).forEach(function(x){ (o[x.t] = o[x.t] || []).push(x); });
+    return o;
+  }
+  function record(range, q, ok, ms){
+    var l = logOf(range.id);
+    l.push({t:q.target, ok:ok?1:0, ms:Math.round(ms)});
+    if (l.length > LOG_MAX) l.splice(0, l.length - LOG_MAX);
+    save();
+  }
+
+  function $(id){ return document.getElementById(id); }
+  function el(tag, cls, text){
+    var e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (text != null) e.textContent = text;
+    return e;
+  }
+
+  // ---- 画面の切り替え ----
+  var VIEWS = ["home","drill","result"];
+  function show(v){
+    VIEWS.forEach(function(x){ $(x).classList.toggle("hidden", x!==v); });
+    if (v==="home") renderHome();
+    window.scrollTo(0,0);
+  }
+  document.addEventListener("click", function(e){
+    var g = e.target.getAttribute && e.target.getAttribute("data-go");
+    if (g) { stopTimer(); show(g); }
+  });
+
+  // ---- 五線（自前の SVG。計画 §3 決定2） ----
+  //   位置 pos は第1線を 0 として線と間を 1 ずつ数える（理論.js の staffPos）。半間 = 5px
+  var NS = "http://www.w3.org/2000/svg", H = 5, ACC = {"-2":"𝄫","-1":"♭","0":"♮","1":"♯","2":"𝄪"};
+  // 臨時記号（30px）の基準線を音の高さから何 px 下げるか。♯・♮ は中心を、♭・𝄫 はふくらみを、𝄪 は小さい字形の中心を合わせる。
+  //   画面の字体で字形の墨の上端・下端を測って決めた（2026-10-28）。𝄫 は幅が倍あるので段を 2 つ使う
+  var ACC_DY = {"-2":5,"-1":6,"0":12,"1":12,"2":18}, ACC_SPAN = {"-2":2};
+  function svg(tag, attrs, text){
+    var e = document.createElementNS(NS, tag);
+    for (var k in attrs) e.setAttribute(k, attrs[k]);
+    if (text != null) e.textContent = text;
+    return e;
+  }
+  // q.staff の列を描く。colors は列ごとの色（メロディで、答えた音・いま答える音を塗る）
+  function drawStaff(q, colors){
+    var cols = q.staff.map(function(col){
+      return col.map(function(p){ return {p:p, pos:T.staffPos(p, q.clef), acc:T.accidentalIn(p, q.fifths)}; })
+        .sort(function(a,b){ return a.pos - b.pos; });
+    });
+    var sig = T.keySigPlaces(q.fifths, q.clef);
+    var lo = -3, hi = 11;
+    cols.forEach(function(c){ c.forEach(function(n){ lo = Math.min(lo, n.pos - 3); hi = Math.max(hi, n.pos + 3); }); });
+    var y = function(pos){ return 6 + (hi - pos) * H; };
+    // 列の置き方を先に決める。臨時記号は上から置き、近い高さ（6 位置未満）に先客がいれば 1 つ左の段へ。
+    //   段の数だけ列の左を空けるので、臨時記号の多い和音でも音部記号や前の列に重ならない
+    var KEY0 = 54, KEYW = 12, ACCW = 12, colW = q.staff.length > 2 ? 40 : 58;
+    var cursor = KEY0 + sig.length * KEYW;
+    cols.forEach(function(c){
+      var placed = [];
+      for (var j = c.length - 1; j >= 0; j--){
+        if (c[j].acc == null) continue;
+        var lane = 0, span = ACC_SPAN[c[j].acc] || 1;
+        var busy = function(l){ return placed.some(function(a){
+          return Math.abs(a.pos - c[j].pos) < 6 && l <= a.lane + a.span - 1 && a.lane <= l + span - 1; }); };
+        while (busy(lane)) lane++;
+        placed.push({pos:c[j].pos, lane:lane, span:span}); c[j].lane = lane + (span - 1) / 2;
+      }
+      var lanes = placed.length ? Math.max.apply(null, placed.map(function(a){ return a.lane + a.span - 1; })) : 0;
+      c.cx = cursor + lanes * ACCW + colW/2;
+      cursor = c.cx + colW/2;
+    });
+    var width = Math.max(cursor + 16, 160), height = (hi - lo) * H + 12;
+    var s = svg("svg", {viewBox:"0 0 "+width+" "+height, width:width*1.6, height:height*1.6, role:"img"});
+    for (var i = 0; i <= 8; i += 2) s.appendChild(svg("line", {x1:4, x2:width-4, y1:y(i), y2:y(i), stroke:"#1b1b1b", "stroke-width":1}));
+    var cl = T.clef(q.clef);
+    // 音部記号の大きさと基準線（第1線からのずれ）は、Segoe UI Symbol の字形の墨の上端・下端を測って決めた（2026-10-28）。
+    //   ト音記号は第1線の 1.5 間下から第5線の 1.5 間上まで、ヘ音記号は第5線から第2線の下まで、ハ音記号は五線ちょうど
+    var clefAt = {treble:{size:68, dy:0}, bass:{size:55, dy:-2}, alto:{size:55, dy:1.5}}[q.clef];
+    s.appendChild(svg("text", {x:8, y:y(0)+clefAt.dy, "font-size":clefAt.size, fill:"#1b1b1b",
+      "font-family":"Bravura,'Noto Music','Segoe UI Symbol','Apple Symbols',serif"}, cl.glyph));
+    // 臨時記号: ♯・♮ は中心を、♭ はふくらみを音の高さに合わせる
+    function accY(pos, alt){ return y(pos) + ACC_DY[alt]; }
+    sig.forEach(function(pos, i){
+      s.appendChild(svg("text", {x:KEY0 + i*KEYW, y:accY(pos, q.fifths > 0 ? 1 : -1), "font-size":30, fill:"#1b1b1b", "text-anchor":"middle"}, q.fifths > 0 ? "♯" : "♭"));
+    });
+    cols.forEach(function(c, ci){
+      var cx = c.cx, color = (colors && colors[ci]) || "#1b1b1b";
+      // 2度で隣り合う音は、右へずらして重ならないようにする
+      var shifted = c.map(function(){ return false; });
+      for (var i = 1; i < c.length; i++) if (c[i].pos - c[i-1].pos === 1 && !shifted[i-1]) shifted[i] = true;
+      var led = {};
+      c.forEach(function(n){ T.ledgers(n.pos).forEach(function(l){ led[l] = 1; }); });
+      Object.keys(led).forEach(function(l){
+        var w = shifted.some(function(x){ return x; }) ? 24 : 11;
+        s.appendChild(svg("line", {x1:cx-11, x2:cx+w, y1:y(+l), y2:y(+l), stroke:"#1b1b1b", "stroke-width":1.2}));
+      });
+      for (var j = c.length - 1; j >= 0; j--){
+        var n = c[j], hx = cx + (shifted[j] ? 13 : 0), hy = y(n.pos);
+        s.appendChild(svg("ellipse", {cx:hx, cy:hy, rx:6.6, ry:4.6, fill:color}));
+        s.appendChild(svg("ellipse", {cx:hx, cy:hy, rx:3.2, ry:2.2, fill:"#f6f3ea", transform:"rotate(-35 "+hx+" "+hy+")"}));
+        if (n.acc != null)
+          s.appendChild(svg("text", {x:cx - 18 - n.lane*ACCW, y:accY(n.pos, n.acc), "font-size":30, fill:color, "text-anchor":"middle"}, ACC[n.acc]));
+      }
+    });
+    return s;
+  }
+
+  // ---- ホーム ----
+  function goal(){ return PORTAL.goal; }
+  function statusLine(st){
+    if (!st.n) return "まだ解いていない";
+    return "直近 " + st.n + " 問: 正答 " + Math.round(100*st.acc) + "% ・ 中央値 " + (st.med/1000).toFixed(1) + " 秒";
+  }
+  function renderHome(){
+    document.title = PORTAL.title;
+    $("title").textContent = PORTAL.title;
+    $("lead").textContent = PORTAL.lead;
+    var how = $("how"); how.innerHTML = "";
+    PORTAL.how.forEach(function(t){ how.appendChild(el("li",null,t)); });
+    var g = goal();
+    how.appendChild(el("li",null,"達成の目安: 直近 "+g.recent+" 問の正答率 "+Math.round(100*g.accuracy)+"% 以上・回答時間の中央値 "+(g.medianMs/1000)+" 秒以内"));
+
+    var sc = $("sysChips"); sc.innerHTML = "";
+    T.SYSTEMS.forEach(function(x){
+      var b = el("button","chip"+(state.sys===x.id?" on":""), x.label+"（"+x.letters.join(" ")+"）");
+      b.onclick = function(){ state.sys = x.id; save(); renderHome(); };
+      sc.appendChild(b);
+    });
+
+    var box = $("groups"); box.innerHTML = "";
+    GROUPS.forEach(function(gr){
+      var card = el("div","card");
+      card.appendChild(el("h2",null,gr.title));
+      card.appendChild(el("p","fieldhead",gr.lead));
+      gr.ranges.forEach(function(r){
+        var st = D.status(logOf(r.id), g);
+        var b = el("button","deck");
+        var t = el("b",null,r.title);
+        if (st.met) t.appendChild(el("span","tag o","達成"));
+        b.appendChild(t);
+        b.appendChild(el("span",null,r.lead));
+        b.appendChild(el("span",null,statusLine(st)));
+        b.onclick = function(){ start(r); };
+        card.appendChild(b);
+      });
+      box.appendChild(card);
+    });
+  }
+
+  // ---- 出題 ----
+  var cur = null, rand = D.rng(Date.now() & 0x7fffffff);
+  var timer = null;
+  function stopTimer(){ if (timer) { clearTimeout(timer); timer = null; } }
+  function poolOf(r){ return r.type === "melody" ? null : D.all(r); }
+  function nextQuestion(){
+    var r = cur.range;
+    var q = r.type === "melody" ? D.TYPES.melody.make(r, rand)
+      : D.pick(cur.pool, byTarget(r.id), goal(), rand, cur.q && cur.q.target);
+    cur.q = q; cur.step = 0; cur.done = false; cur.t0 = Date.now();
+    renderQuestion();
+  }
+  function start(r){
+    cur = {range:r, pool:poolOf(r), n:0, ok:0, ms:[], wrong:{}, q:null};
+    show("drill");
+    nextQuestion();
+  }
+  function askText(q){
+    var p = D.promptText(q, state.sys);
+    var A = PORTAL.ask[q.type + (q.dir ? ":" + q.dir : "")] || PORTAL.ask[q.type];
+    return p ? p + " ― " + A : A;
+  }
+  function melodyColors(q, failedAt){
+    return q.staff.map(function(_, i){
+      if (failedAt != null && i === failedAt) return "#d13b2a";
+      if (i < cur.step) return "#1f9d63";
+      if (i === cur.step && !cur.done) return "#7c4dff";
+      return null;
+    });
+  }
+  function renderQuestion(){
+    var q = cur.q, r = cur.range, total = PORTAL.session;
+    $("dMeta").textContent = (cur.n+1)+" / "+total;
+    $("dScore").textContent = "正解 "+cur.ok;
+    $("dProg").style.width = (100*cur.n/total)+"%";
+    $("dRange").textContent = r.group.title+" › "+r.title;
+    var st = $("dStaff"); st.innerHTML = "";
+    if (q.staff.length || q.type === "keysig" && q.dir === "read") st.appendChild(drawStaff(q, q.type==="melody" ? melodyColors(q) : null));
+    st.classList.toggle("hidden", !(q.staff.length || q.type === "keysig" && q.dir === "read"));
+    $("dAsk").textContent = askText(q);
+    var box = $("dChoices"); box.innerHTML = "";
+    var labels = q.choices.map(function(id){ return D.label(q, id, state.sys); });
+    var wide = labels.some(function(t){ return t.length > 5; });
+    box.className = "choices" + (wide ? " wide" : "");
+    q.choices.forEach(function(id, i){
+      var b = el("button","choice",labels[i]);
+      b.setAttribute("data-id", id);
+      b.onclick = function(){ answer(id, b); };
+      box.appendChild(b);
+    });
+    $("dFb").textContent = ""; $("dFb").className = "fb";
+    $("nextBtn").classList.add("hidden");
+  }
+  function mark(id, cls){
+    var bs = $("dChoices").querySelectorAll(".choice");
+    for (var i=0;i<bs.length;i++) if (bs[i].getAttribute("data-id") === id) bs[i].classList.add(cls);
+  }
+  function answer(id, btn){
+    var q = cur.q;
+    if (cur.done) return;
+    if (q.type === "melody"){
+      if (q.answer[cur.step] === id){
+        cur.step++;
+        if (cur.step < q.answer.length){ $("dStaff").innerHTML = ""; $("dStaff").appendChild(drawStaff(q, melodyColors(q))); return; }
+        settle(true, (Date.now()-cur.t0)/q.answer.length);
+      } else {
+        var at = cur.step;
+        settle(false, (Date.now()-cur.t0)/q.answer.length);
+        $("dStaff").innerHTML = ""; $("dStaff").appendChild(drawStaff(q, melodyColors(q, at)));
+      }
+      return;
+    }
+    settle(D.isCorrect(q, id), Date.now()-cur.t0, id);
+  }
+  function correctText(q){
+    if (q.type === "melody") return q.answer.map(function(id){ return D.label(q, id, state.sys); }).join(" ");
+    return q.accept.map(function(id){ return D.label(q, id, state.sys); }).join(" ／ ");
+  }
+  function settle(ok, ms, picked){
+    var q = cur.q;
+    cur.done = true;
+    record(cur.range, q, ok, ms);
+    cur.n++; cur.ms.push(ms);
+    if (ok) cur.ok++; else cur.wrong[q.target] = (cur.wrong[q.target] || 0) + 1;
+    if (q.type !== "melody"){
+      q.accept.forEach(function(id){ mark(id, "ok"); });
+      if (!ok && picked) mark(picked, "ng");
+    }
+    var fb = $("dFb");
+    fb.className = "fb " + (ok ? "ok" : "ng");
+    fb.textContent = ok ? "正解（"+(ms/1000).toFixed(1)+" 秒）" : "正解は "+correctText(q);
+    if (ok && cur.n < PORTAL.session) timer = setTimeout(function(){ timer = null; nextQuestion(); }, 600);
+    else $("nextBtn").classList.remove("hidden");
+  }
+  $("nextBtn").onclick = function(){
+    stopTimer();
+    if (cur.n >= PORTAL.session) finish(); else nextQuestion();
+  };
+
+  // ---- 結果 ----
+  function targetLabel(t){
+    // target は「種類:対象」。人が読める形に直す（音名は表記の設定に合わせる）
+    var a = t.split(":");
+    if (a[0] === "note") return T.clef(a[1]).label + " の " + T.name(a[2], state.sys, true);
+    if (a[0] === "interval") return T.intervalName(a[1], "ja");
+    if (a[0] === "keysig" && a[1] === "read") return "調号 " + D.label({type:"keysig", dir:"write"}, a[3]);
+    if (a[0] === "keysig") return T.keyName(a[2], state.sys);
+    if (a[0] === "chord-tones") return a[1];
+    if (a[0] === "chord-name") return T.chordType(a[1]).disp ? a[1] + "（転回 " + a[2] + "）" : "三和音（転回 " + a[2] + "）";
+    return t;
+  }
+  function finish(){
+    var st = D.status(logOf(cur.range.id), goal());
+    $("resText").textContent = cur.n+" 問中 "+cur.ok+" 問正解 ・ 回答時間の中央値 "+(D.median(cur.ms)/1000).toFixed(1)+" 秒";
+    $("resGoal").textContent = cur.range.title+": "+statusLine(st)+(st.met ? "（達成）" : "");
+    var tb = $("resWeak"); tb.innerHTML = "";
+    Object.keys(cur.wrong).forEach(function(t){
+      var tr = el("tr"); tr.appendChild(el("td",null,targetLabel(t))); tr.appendChild(el("td","n","間違い "+cur.wrong[t]));
+      tb.appendChild(tr);
+    });
+    show("result");
+  }
+  $("againBtn").onclick = function(){ start(cur.range); };
+  $("resetBtn").onclick = function(){
+    if (!confirm("回答の記録をすべて消します。よろしいですか")) return;
+    state.log = {}; save(); renderHome();
+  };
+
+  // 検査（tests/test_music.js）が、組み立てた結果を本体から読めるようにする
+  window.__MUSIC = { PORTAL:PORTAL, GROUPS:GROUPS, RANGES:RANGES, state:state, drawStaff:drawStaff, targetLabel:targetLabel };
+
+  show("home");
+})();
+</script>
+</body>
+</html>
